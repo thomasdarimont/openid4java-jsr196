@@ -139,4 +139,7 @@ That's it!
 
 Now You will see a default login page if you try to login to your web application: 
 
- 
+
+==Role Mapping==
+
+Notice that we mapped also our default group "Author" to a application specific role name. The group "Author" was configured in the OpenIDProvider property "assign.groups". So each user how have successful authenticated against his OpenID Provider will default to this group and the role  "org.imixs.ACCESSLEVEL.AUTHORACCESS". You can change this settings to the requirements of your application.
