@@ -18,6 +18,7 @@
  *  
  *  Contributors:  
  *  	Ralph Soika
+ *      Patrick Ethier
  *******************************************************************************/
 
 package org.imixs.openid.openid4java;
@@ -62,6 +63,8 @@ import org.openid4java.message.AuthRequest;
 import org.openid4java.message.AuthSuccess;
 import org.openid4java.message.ParameterList;
 import org.openid4java.message.ax.AxMessage;
+import org.openid4java.util.HttpClientFactory;
+import org.openid4java.util.ProxyProperties;
 
 /**
  * This Class is a JSR-196 based ServerAuthModul using OpenID4Java to
@@ -73,13 +76,13 @@ import org.openid4java.message.ax.AxMessage;
  * <li>- commons-httpclient-3.0.1.jar
  * <li>- commons-logging-1.03.jar
  * <p>
- *  
+ * 
  * and also the openid4java lib: openid4java-full-0.9.5.jar
  * 
- * @author rsoika
+ * @author rsoika, Patrick Ethier
  */
+@SuppressWarnings("unchecked")
 public class OpenID4JavaAuthModule implements ServerAuthModule {
-
 
 	private static final String loginAction = "openid_login";
 	private static final String loginURI = "/" + loginAction;
@@ -100,12 +103,19 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 	}
 	private int debugStagesMask;
 
+	// proxy configuration
+	private String http_proxy_host = null;
+	private Integer http_proxy_port = null;
+	private String http_proxy_user = null;
+	private String http_proxy_pass = null;
+
 	protected static final Class[] supportedMessageTypes = new Class[] {
 			javax.servlet.http.HttpServletRequest.class,
 			javax.servlet.http.HttpServletResponse.class };
 
 	protected final Logger logger = Logger
 			.getLogger(OpenID4JavaAuthModule.class.getName());
+
 	protected Map options;
 	protected CallbackHandler handler;
 	protected MessagePolicy requestPolicy;
@@ -117,6 +127,12 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 	private static String DEBUG_STAGES_OPTIONS_KEY = "debug.stages";
 	public static final String OPENID_IDENTIFIER = "openid.identifier";
 	public static final String OPENID_CONSUMER_MANAGER = "openid.consumer_manager";
+
+	public static final String HTTP_PROXY_HOST_KEY = "http_proxy_host";
+	public static final String HTTP_PROXY_PORT_KEY = "http_proxy_port";
+	public static final String HTTP_PROXY_USER_KEY = "http_proxy_user";
+	public static final String HTTP_PROXY_PASS_KEY = "http_proxy_pass";
+
 	protected static final String SAVED_REQUEST_ATTRIBUTE = "javax.security.auth.message.SavedHttpRequest";
 
 	protected String[] assignedGroups;
@@ -144,6 +160,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 	 * authentication.
 	 * 
 	 */
+
 	public void initialize(MessagePolicy requestPolicy,
 			MessagePolicy responsePolicy, CallbackHandler handler, Map options)
 			throws AuthException {
@@ -157,6 +174,11 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 
 		debugStagesMask = parseDebugStagesOption(options);
 
+		// proxy settings
+		this.http_proxy_host = parseHttpProxyHost(options);
+		this.http_proxy_port = parseHttpProxyPort(options);
+		this.http_proxy_user = parseHttpProxyUser(options);
+		this.http_proxy_pass = parseHttpProxyPass(options);
 	}
 
 	/**
@@ -247,7 +269,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 			String returnToUrl = getQueryParameter(request, "return_to");
 
 			logInfo(DEBUG_TRACE, "openid.return_to=" + returnToUrl);
-			
+
 			// calling openid4java manager
 			authentificate(messageInfo, userSuppliedString, returnToUrl);
 
@@ -265,12 +287,10 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 			if (identifier == null) {
 				// No!
 				logInfo(DEBUG_TRACE, "openid.cleanup_session");
-				request.getSession().removeAttribute(
-						OPENID_CONSUMER_MANAGER);
+				request.getSession().removeAttribute(OPENID_CONSUMER_MANAGER);
 				request.getSession().removeAttribute(OPENID_IDENTIFIER);
 				request.getSession().removeAttribute("openid-disc");
 
-				
 				// If the request is protected than response with an openID
 				// login form
 				if (isMandatory) {
@@ -446,8 +466,6 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 
 	}
 
-
-
 	/**
 	 * This method returns a shared ConsumerManager instance. If no instance is
 	 * still available the method creates a new ConsumerManager and stores the
@@ -463,6 +481,23 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 			// instantiate a ConsumerManager object
 			try {
 				logInfo(DEBUG_TRACE, "openid.createing_consumer_manager");
+
+				// Add Proxy Support
+				if (http_proxy_host != null) {
+					ProxyProperties proxyProps = new ProxyProperties();
+					proxyProps.setProxyHostName(http_proxy_host);
+					if (http_proxy_port != null) {
+						proxyProps.setProxyPort(http_proxy_port);
+					}
+					if (http_proxy_user != null) {
+						proxyProps.setUserName(http_proxy_user);
+					}
+					if (http_proxy_pass != null) {
+						proxyProps.setPassword(http_proxy_pass);
+					}
+					HttpClientFactory.setProxyProperties(proxyProps);
+				}
+
 				manager = new ConsumerManager();
 				manager.getRealmVerifier().setEnforceRpId(false);
 				// store shared consumer_manager
@@ -764,6 +799,43 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 		return groups;
 	}
 
+	private String parseHttpProxyHost(Map options) {
+		if (options != null) {
+			if (options.containsKey(HTTP_PROXY_HOST_KEY)) {
+				return (String) options.get(HTTP_PROXY_HOST_KEY);
+			}
+		}
+		return null;
+	}
+
+	private Integer parseHttpProxyPort(Map options) {
+		if (options != null) {
+			if (options.containsKey(HTTP_PROXY_PORT_KEY)) {
+				return Integer.valueOf((String) options
+						.get(HTTP_PROXY_PORT_KEY));
+			}
+		}
+		return null;
+	}
+
+	private String parseHttpProxyUser(Map options) {
+		if (options != null) {
+			if (options.containsKey(HTTP_PROXY_USER_KEY)) {
+				return (String) options.get(HTTP_PROXY_USER_KEY);
+			}
+		}
+		return null;
+	}
+
+	private String parseHttpProxyPass(Map options) {
+		if (options != null) {
+			if (options.containsKey(HTTP_PROXY_PASS_KEY)) {
+				return (String) options.get(HTTP_PROXY_PASS_KEY);
+			}
+		}
+		return null;
+	}
+
 	private boolean setCallerPrincipal(String caller, Subject clientSubject) {
 		boolean rvalue = true;
 		boolean assignGroups = true;
@@ -841,7 +913,6 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 					receivingURL = new StringBuffer(urlReceifing.toString());
 				}
 			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
