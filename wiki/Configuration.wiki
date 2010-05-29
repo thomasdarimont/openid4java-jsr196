@@ -2,20 +2,22 @@ Configuration of the OpenID4JavaAuthModule
 
 Now you can configure the OpenID4JavaAuthModule using the GlassFish Admin Console following the next steps:
 
-   1. Make sure the GlassFish Application Server is running. If it is not already running, you can start it using the following command:
+ 1. Make sure the GlassFish Application Server is running. If it is not already running, you can start it using the following command:
+  {{{<GF_HOME>bin/asadmin start-domain domain1}}}
+  where {{{<GF_HOME>}}} is the directory where you installed GlassFish
 
-         {{{<GF_HOME>bin/asadmin start-domain domain1}}}
+ 2. Open the GlassFish Admin Console by pointing your browser to the URL: http://localhost:4848/.
 
-      where {{{<GF_HOME>}}} is the directory where you installed GlassFish
-   2. Open the GlassFish Admin Console by pointing your browser to the URL: http://localhost:4848/.
-   3. Login to the Admin Console by entering your ID and password.
-   4. Expand the Configuration node at the bottom of the left-hand pane.
-   5. Navigate to the Security node, expand it, and click MessageSecurity.
+ 3. Login to the Admin Console by entering your ID and password.
+
+ 4. Expand the Configuration node at the bottom of the left-hand pane.
+
+ 5. Navigate to the Security node, expand it, and click MessageSecurity.
 
 [http://www-02.imixs.com/roller/ralphsjavablog/resource/openid/glassfish1.png]
 
 
-   6. Under Message Security Configurations, either open the HttpServlet layer if it already exists, or create it if it doesn't exist by clicking the New button. Clicking the button opens the New Message Security Configuration window.
+ 6. Under Message Security Configurations, either open the HttpServlet layer if it already exists, or create it if it doesn't exist by clicking the New button. Clicking the button opens the New Message Security Configuration window.
 
       If you can not see the HttpServlet node you need to create the layer:
 
