@@ -6,7 +6,7 @@ To install the OpenID4Java AuthModule you first need to download the following p
 
     * [http://code.google.com/p/openid4java-jsr196/downloads/list imixs-openid-0.0.2]
       Includes my new JSR-196 ServerAuthModule implementation based on the openid4java library.
-    * openid4java-0.9.5.jar
+    * [http://code.google.com/p/openid4java/downloads/list openid4java-0.9.5.jar]
       Includes the official openid4java library and additional tools provided by the OpenID4Java Group.
 
 Copy the imixs-openid-0.0.2-SNAPSHOT.jar into the Glassfish Lib folder
