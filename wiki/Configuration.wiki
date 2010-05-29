@@ -12,14 +12,14 @@ Now you can configure the OpenID4JavaAuthModule using the GlassFish Admin Consol
    4. Expand the Configuration node at the bottom of the left-hand pane.
    5. Navigate to the Security node, expand it, and click MessageSecurity.
 
-
+[http://www-02.imixs.com/roller/ralphsjavablog/resource/openid/glassfish1.png]
 
 
    6. Under Message Security Configurations, either open the HttpServlet layer if it already exists, or create it if it doesn't exist by clicking the New button. Clicking the button opens the New Message Security Configuration window.
 
       If you can not see the HttpServlet node you need to create the layer:
 
-       
+       [http://www-02.imixs.com/roller/ralphsjavablog/resource/openid/glassfish1a.png]
 
        Click the "New" button and you can than start to configure the new provider in one step. To do that:
           * Set the following in the New Message Security Configuration window:
@@ -41,7 +41,7 @@ Now you can configure the OpenID4JavaAuthModule using the GlassFish Admin Consol
           * Open the HttpServlet layer by selecting it in the Message Security Configurations window.
           * Select the Providers tab to open the Provider Configuration window.
 
-
+[http://www-02.imixs.com/roller/ralphsjavablog/resource/openid/glassfish3.png]
 
 
           * Click the New button to open the New Provider Configuration window.
@@ -56,10 +56,12 @@ Now you can configure the OpenID4JavaAuthModule using the GlassFish Admin Consol
 For the first configuration this is a little bit confusing as you need to create the HttpServlet Layer. But in general the hole configuration is very simple. 
 
 Also note that the provider configuration utility also provides a dialog box that you can use to configure additional properties. We will use this properties to configure out OpenIDProvider for our applications.
-Configure additional Properties
+
+=Configure additional Properties=
 
 After adding the new OpenIDProvider like described before you can start using the provider in your web application. But there a also a few additional properties which can be configured for each provider instance. You can add these properties by using the box "additional properties at the end of you configuration page:
 
+[http://www-02.imixs.com/roller/ralphsjavablog/resource/openid/glassfish4.png]
  
 
 The different properties and there usage are described below:
@@ -139,6 +141,7 @@ That's it!
 
 Now You will see a default login page if you try to login to your web application: 
 
+[http://www-02.imixs.com/roller/ralphsjavablog/resource/openid/openid_page1.gif]
 
 ==Role Mapping==
 
