@@ -6,7 +6,7 @@ Now you can configure the OpenID4JavaAuthModule using the GlassFish Admin Consol
 
          {{{<GF_HOME>bin/asadmin start-domain domain1}}}
 
-      where <GF_HOME> is the directory where you installed GlassFish
+      where {{{<GF_HOME>}}} is the directory where you installed GlassFish
    2. Open the GlassFish Admin Console by pointing your browser to the URL: http://localhost:4848/.
    3. Login to the Admin Console by entering your ID and password.
    4. Expand the Configuration node at the bottom of the left-hand pane.
