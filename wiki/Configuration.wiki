@@ -4,7 +4,7 @@ Now you can configure the OpenID4JavaAuthModule using the GlassFish Admin Consol
 
    1. Make sure the GlassFish Application Server is running. If it is not already running, you can start it using the following command:
 
-         <GF_HOME>bin/asadmin start-domain domain1
+         {{{<GF_HOME>bin/asadmin start-domain domain1}}}
 
       where <GF_HOME> is the directory where you installed GlassFish
    2. Open the GlassFish Admin Console by pointing your browser to the URL: http://localhost:4848/.
@@ -87,7 +87,7 @@ The first thing what you should do is remove existing tag login-config like basi
 
 This is an example of the security-constraint seciton in my web.xml
 
-[[[
+{{{
 ....
 	<security-constraint>
 		<display-name>Access Manager Security Constraint</display-name>
@@ -107,13 +107,13 @@ This is an example of the security-constraint seciton in my web.xml
 		</role-name>
 	</security-role>
 .....
-]]]
+}}}
 
 Next you need to link your openid provider configured on glassfish admin client with you web application in the sun-web.xml. 
 
 Therefor you need to add the attriubte "httpservlet-security-provider" with the name of your openid provider. The the following example of my sun-web.xml file:
 
-[[[
+{{{
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE sun-web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Application Server 9.0 Servlet 2.5//EN" "http://www.sun.com/software/appserver/dtds/sun-web-app_2_5-0.dtd">
 <sun-web-app error-url="" httpservlet-security-provider="OpenIDProvider">
@@ -133,12 +133,10 @@ Therefor you need to add the attriubte "httpservlet-security-provider" with the 
 		</property>
 	</jsp-config>
 </sun-web-app> 
-]]]
+}}}
 
 That's it!
 
 Now You will see a default login page if you try to login to your web application: 
 
  
-
-
