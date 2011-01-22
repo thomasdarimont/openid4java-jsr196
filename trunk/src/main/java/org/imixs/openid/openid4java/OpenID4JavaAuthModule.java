@@ -484,19 +484,25 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 
 				// Add Proxy Support
 				if (http_proxy_host != null) {
+					logInfo(DEBUG_TRACE, "openid.using_proxy_settings:");
 					ProxyProperties proxyProps = new ProxyProperties();
 					proxyProps.setProxyHostName(http_proxy_host);
+					logInfo(DEBUG_TRACE, "openid.http_proxy_host:"+http_proxy_host);
 					if (http_proxy_port != null) {
 						proxyProps.setProxyPort(http_proxy_port);
+						logInfo(DEBUG_TRACE, "openid.http_proxy_port:"+http_proxy_port);
 					}
 					if (http_proxy_user != null) {
 						proxyProps.setUserName(http_proxy_user);
+						logInfo(DEBUG_TRACE, "openid.http_proxy_user:"+http_proxy_user);
 					}
 					if (http_proxy_pass != null) {
 						proxyProps.setPassword(http_proxy_pass);
+						logInfo(DEBUG_TRACE, "openid.http_proxy_pass:"+http_proxy_pass);
 					}
 					HttpClientFactory.setProxyProperties(proxyProps);
-				}
+				} else
+					logInfo(DEBUG_TRACE, "openid.no_proxy_settings_used");
 
 				manager = new ConsumerManager();
 				manager.getRealmVerifier().setEnforceRpId(false);
@@ -738,7 +744,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 
 			AuthRequest authReq = getConsumerManager(request).authenticate(
 					discovered, returnToUrl);
-
+			
 			if (!discovered.isVersion2()) {
 				// Option 1: GET HTTP-redirect to the OpenID Provider
 				// endpoint
@@ -764,8 +770,8 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 			}
 
 			try {
-				logInfo(DEBUG_ASSOCIATION, "openid.send_redirect");
-
+				logInfo(DEBUG_ASSOCIATION, "openid.send_redirect:");
+				logInfo(DEBUG_ASSOCIATION,authReq.getDestinationUrl(true));
 				response.sendRedirect(authReq.getDestinationUrl(true));
 			} catch (IOException e) {
 				e.printStackTrace();
