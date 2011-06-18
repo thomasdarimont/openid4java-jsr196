@@ -1,10 +1,10 @@
-How to Install the OpenID4JavaAuthModule
+=How to Install the OpenID4JavaAuthModule=
 
 The OpenID4JavaAuthModule I have written is easy to install. To enable your JEE Web application for OpenID you need a Server plattform supporting JSR-196. The following section will describe the installation steps for a Glassfish Application Server. Glassfish supports JSR-196. But there may be also other web containers supporting JSR-196.
 
 To install the OpenID4Java AuthModule you first need to download the following parts:
 
-    * [http://code.google.com/p/openid4java-jsr196/downloads/list imixs-openid-0.0.2]
+    * [http://code.google.com/p/openid4java-jsr196/downloads/list imixs-openid-0.0.3]
       Includes my new JSR-196 ServerAuthModule implementation based on the openid4java library.
     * [http://code.google.com/p/openid4java/downloads/list openid4java-0.9.5.jar]
       Includes the official openid4java library and additional tools provided by the OpenID4Java Group.
@@ -26,4 +26,4 @@ The glassfish domain specific /lib folder is located on the following path:
 
 where domain1 is your prefered domain (domain1 is the default domain typical used).
 
-Notice: The tree commons-* libraries are appache utilities which are used by openid4java.
+Notice: The three commons-* libraries are appache utilities which are used by openid4java.
