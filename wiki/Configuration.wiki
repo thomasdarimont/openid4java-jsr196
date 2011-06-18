@@ -22,8 +22,6 @@ After you have [http://code.google.com/p/openid4java-jsr196/wiki/HowToInstall in
 
       If you can not see the HttpServlet node you need to create the layer:
 
-       [http://www-02.imixs.com/roller/ralphsjavablog/resource/openid/glassfish1a.png]
-
        Click the "New" button and you can than start to configure the new provider in one step. To do that:
           * Set the following in the New Message Security Configuration window:
 
