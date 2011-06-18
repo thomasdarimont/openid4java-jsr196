@@ -1,6 +1,7 @@
-Configuration of the OpenID4JavaAuthModule
+=Configuration of the OpenID4JavaAuthModule=
 
-Now you can configure the OpenID4JavaAuthModule using the GlassFish Admin Console following the next steps:
+After you have [http://code.google.com/p/openid4java-jsr196/wiki/HowToInstall installed] the module in you web server you can configure the OpenID4JavaAuthModule. The following example shows the configuration using the GlassFish Server. (Pleas note that there are some different UI between Glassfish 2.1 and the latest Glasfish 3.1 server version. But the concepts are identically. If you have any suggestions about the configuration please post them into the [http://code.google.com/p/openid4java-jsr196/issues/list issue list].)
+
 
  1. Make sure the GlassFish Application Server is running. If it is not already running, you can start it using the following command:
   {{{<GF_HOME>bin/asadmin start-domain domain1}}}
