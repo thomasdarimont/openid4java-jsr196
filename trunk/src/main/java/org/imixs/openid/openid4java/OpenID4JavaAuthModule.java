@@ -61,8 +61,15 @@ import org.openid4java.discovery.DiscoveryInformation;
 import org.openid4java.discovery.Identifier;
 import org.openid4java.message.AuthRequest;
 import org.openid4java.message.AuthSuccess;
+import org.openid4java.message.MessageExtension;
 import org.openid4java.message.ParameterList;
 import org.openid4java.message.ax.AxMessage;
+import org.openid4java.message.ax.FetchRequest;
+import org.openid4java.message.ax.FetchResponse;
+import org.openid4java.message.ax.StoreResponse;
+import org.openid4java.message.sreg.SRegMessage;
+import org.openid4java.message.sreg.SRegRequest;
+import org.openid4java.message.sreg.SRegResponse;
 import org.openid4java.util.HttpClientFactory;
 import org.openid4java.util.ProxyProperties;
 
@@ -124,9 +131,13 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 	private static final String IS_MANDATORY_INFO_KEY = "javax.security.auth.message.MessagePolicy.isMandatory";
 	private static final String AUTH_TYPE_INFO_KEY = "javax.servlet.http.authType";
 	protected static final String ASSIGN_GROUPS_OPTIONS_KEY = "assign.groups";
+	protected static final String ATTRIBUTE_EXCHANGE_OPTIONS_KEY = "attribute.exchange";
+
 	private static String DEBUG_STAGES_OPTIONS_KEY = "debug.stages";
 	public static final String OPENID_IDENTIFIER = "openid.identifier";
 	public static final String OPENID_CONSUMER_MANAGER = "openid.consumer_manager";
+	public static final String OPENID_ATTRIBUTE_EXCHANGE = "openid.attriubte_exchange";
+	
 
 	public static final String HTTP_PROXY_HOST_KEY = "http_proxy_host";
 	public static final String HTTP_PROXY_PORT_KEY = "http_proxy_port";
@@ -136,6 +147,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 	protected static final String SAVED_REQUEST_ATTRIBUTE = "javax.security.auth.message.SavedHttpRequest";
 
 	protected String[] assignedGroups;
+	protected String[] attributeExchange;
 	protected boolean isMandatory;
 
 	/**
@@ -171,6 +183,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 		this.handler = handler;
 		this.options = options;
 		this.assignedGroups = parseAssignGroupsOption(options);
+		this.attributeExchange = parseAttributeExchangeOption(options);
 
 		debugStagesMask = parseDebugStagesOption(options);
 
@@ -303,8 +316,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 				}
 			} else {
 				// We still have a valid token
-				// so we can set the caller pricipal now
-
+				// so we can set the caller principal for now
 				String id = identifier.getIdentifier();
 				setCallerPrincipal(id, clientSubject);
 				messageInfo.getMap().put(AUTH_TYPE_INFO_KEY, "OpenID");
@@ -487,18 +499,22 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 					logInfo(DEBUG_TRACE, "openid.using_proxy_settings:");
 					ProxyProperties proxyProps = new ProxyProperties();
 					proxyProps.setProxyHostName(http_proxy_host);
-					logInfo(DEBUG_TRACE, "openid.http_proxy_host:"+http_proxy_host);
+					logInfo(DEBUG_TRACE, "openid.http_proxy_host:"
+							+ http_proxy_host);
 					if (http_proxy_port != null) {
 						proxyProps.setProxyPort(http_proxy_port);
-						logInfo(DEBUG_TRACE, "openid.http_proxy_port:"+http_proxy_port);
+						logInfo(DEBUG_TRACE, "openid.http_proxy_port:"
+								+ http_proxy_port);
 					}
 					if (http_proxy_user != null) {
 						proxyProps.setUserName(http_proxy_user);
-						logInfo(DEBUG_TRACE, "openid.http_proxy_user:"+http_proxy_user);
+						logInfo(DEBUG_TRACE, "openid.http_proxy_user:"
+								+ http_proxy_user);
 					}
 					if (http_proxy_pass != null) {
 						proxyProps.setPassword(http_proxy_pass);
-						logInfo(DEBUG_TRACE, "openid.http_proxy_pass:"+http_proxy_pass);
+						logInfo(DEBUG_TRACE, "openid.http_proxy_pass:"
+								+ http_proxy_pass);
 					}
 					HttpClientFactory.setProxyProperties(proxyProps);
 				} else
@@ -618,9 +634,8 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 				response.setContentType("text/html");
 
 				writer.println("<html>");
-				writer
-						.println("<head><meta http-equiv=\"refresh\" content=\"0; URL="
-								+ loginPage + "\" /></head>");
+				writer.println("<head><meta http-equiv=\"refresh\" content=\"0; URL="
+						+ loginPage + "\" /></head>");
 				writer.println("</html>");
 				writer.flush();
 
@@ -641,13 +656,10 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 				writer.print(loginAction);
 				writer.println("\" method=\"get\">");
 				writer.println("<img src=\"http://openid.net/login-bg.gif\">");
-				writer
-						.println("<INPUT TYPE=\"text\" NAME=\"openid_identifier\" VALUE=\"\" SIZE=\"80\">");
+				writer.println("<INPUT TYPE=\"text\" NAME=\"openid_identifier\" VALUE=\"\" SIZE=\"80\">");
 				writer.println("<br><br>");
-				writer
-						.println("<INPUT TYPE=\"submit\" value=\"Login\"> <INPUT TYPE=\"reset\" value=\"Clear\">");
-				writer
-						.print("<INPUT TYPE=\"hidden\" NAME=\"return_to\" value=\"");
+				writer.println("<INPUT TYPE=\"submit\" value=\"Login\"> <INPUT TYPE=\"reset\" value=\"Clear\">");
+				writer.print("<INPUT TYPE=\"hidden\" NAME=\"return_to\" value=\"");
 				writer.print(makeReturnTo(request));
 				writer.println("\">");
 
@@ -744,7 +756,9 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 
 			AuthRequest authReq = getConsumerManager(request).authenticate(
 					discovered, returnToUrl);
-			
+
+			requestAttributeExchange(authReq);
+
 			if (!discovered.isVersion2()) {
 				// Option 1: GET HTTP-redirect to the OpenID Provider
 				// endpoint
@@ -771,7 +785,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 
 			try {
 				logInfo(DEBUG_ASSOCIATION, "openid.send_redirect:");
-				logInfo(DEBUG_ASSOCIATION,authReq.getDestinationUrl(true));
+				logInfo(DEBUG_ASSOCIATION, authReq.getDestinationUrl(true));
 				response.sendRedirect(authReq.getDestinationUrl(true));
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -790,6 +804,49 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 			if (groupList != null) {
 				StringTokenizer tokenizer = new StringTokenizer(groupList,
 						" ,:,;");
+				Set<String> groupSet = null;
+				while (tokenizer.hasMoreTokens()) {
+					if (groupSet == null) {
+						groupSet = new HashSet<String>();
+					}
+					groupSet.add(tokenizer.nextToken());
+				}
+				if (groupSet != null && !groupSet.isEmpty()) {
+					groups = groupSet.toArray(groups);
+				}
+			}
+		}
+		return groups;
+	}
+
+	/**
+	 * this method pares the option param 'attribute.exchange'. The expected
+	 * value format is:
+	 * 
+	 * attribute|shema,attriubte|shema,....
+	 * 
+	 * e.g:
+	 * 
+	 * <code>
+	     first|http://schema.openid.net/namePerson/first,email|http://schema.openid.net/contact/email,fullname|http://schema.openid.net/namePerson=fullname
+	 * </code>
+	 * 
+	 * This example option exhanges the attributes: Firstname, Email and
+	 * fullname.
+	 * 
+	 * 
+	 * 
+	 * @param options
+	 * @return
+	 */
+	private String[] parseAttributeExchangeOption(Map options) {
+		String[] groups = new String[0];
+		if (options != null) {
+			String groupList = (String) options
+					.get(ATTRIBUTE_EXCHANGE_OPTIONS_KEY);
+			if (groupList != null) {
+				StringTokenizer tokenizer = new StringTokenizer(groupList,
+						",;");
 				Set<String> groupSet = null;
 				while (tokenizer.hasMoreTokens()) {
 					if (groupSet == null) {
@@ -899,8 +956,8 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 			logInfo(DEBUG_ASSOCIATION, "openid.do_verifiy_response");
 			// extract the parameters from the authentication response
 			// (which comes in as a HTTP request from the OpenID provider)
-			ParameterList response = new ParameterList(request
-					.getParameterMap());
+			ParameterList response = new ParameterList(
+					request.getParameterMap());
 
 			// extract the receiving URL from the HTTP request
 			StringBuffer receivingURL = request.getRequestURL();
@@ -943,16 +1000,11 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 				AuthSuccess authSuccess = (AuthSuccess) verification
 						.getAuthResponse();
 
-				if (authSuccess.hasExtension(AxMessage.OPENID_NS_AX)) {
-					/*
-					 * FetchResponse fetchResp = (FetchResponse) authSuccess
-					 * .getExtension(AxMessage.OPENID_NS_AX);
-					 * 
-					 * List emails = fetchResp.getAttributeValues("email");
-					 * String email = (String) emails.get(0);
-					 */
-				}
-
+				Map attrMap=consumeAttriubteExchange(authSuccess);
+				// store attributes into session
+				request.getSession().setAttribute(OPENID_ATTRIBUTE_EXCHANGE, attrMap);
+				
+				
 				return verified; // success
 			}
 		} catch (OpenIDException e) {
@@ -961,5 +1013,129 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 		}
 
 		return null;
+	}
+
+	/**
+	 * this Method adds optional request for OpenID Attribute Exchange. The
+	 * attriubtes are stored in the string array 'attributeExchange'. The
+	 * required option for each attriubte exchange is set to false.
+	 * 
+	 * The method uses two different mechanisms to support different openID
+	 * providers.
+	 * 
+	 * @see http://code.google.com/p/openid4java/wiki/AttributeExchangeHowTo
+	 * @see http://code.google.com/p/openid4java/wiki/SRegHowTo
+	 * @see http://openid.net/specs/openid-attribute-exchange-1_0.html
+	 * @param authReq
+	 */
+	private void requestAttributeExchange(AuthRequest authReq)
+			throws OpenIDException {
+		String attriubteName;
+		String attributeShema;
+
+		if (attributeExchange == null || attributeExchange.length == 0) {
+			// no attributeExchange
+			logInfo(DEBUG_ASSOCIATION, "No openid Attribute Exchange");
+			return;
+		}
+
+		logInfo(DEBUG_ASSOCIATION, "openid Attribute Exchange...");
+		SRegRequest sregReq = SRegRequest.createFetchRequest();
+		FetchRequest fetch = FetchRequest.createFetchRequest();
+
+		// iterate over all attriubtes....
+		for (String attribute : attributeExchange) {
+			// split attriubte name from schema
+			if (attribute.indexOf('|') > -1) {
+				attriubteName = attribute.substring(0, attribute.indexOf('|'));
+				attributeShema = attribute
+						.substring(attribute.indexOf('|') + 1);
+			} else {
+				// no shema provided!
+				attriubteName = attribute;
+				attributeShema = "";
+			}
+
+			logInfo(DEBUG_ASSOCIATION, "openid Attribute Exchange: "
+					+ attribute);
+
+			// prepare simple Attribute Exchange
+			sregReq.addAttribute(attriubteName, false);
+
+			// test if openid attribute exchange is possible
+			if (attributeShema != null && !"".equals(attributeShema))
+				fetch.addAttribute(attriubteName, attributeShema, true);
+		}
+
+		authReq.addExtension(sregReq);
+		authReq.addExtension(fetch);
+
+	}
+
+	/**
+	 * this Method reads provided OpenID Attributes. The requested attriubtes
+	 * are stored in the string array 'attributeExchange'.
+	 * 
+	 * The result of all received attributes will be returned into a map.
+	 * (OPENID_ATTRIBUTE_EXCHANGE)
+	 *  
+	 * The method uses two different mechanisms to support different openID
+	 * providers.
+	 * 
+	 * @see http://code.google.com/p/openid4java/wiki/AttributeExchangeHowTo
+	 * @see http://code.google.com/p/openid4java/wiki/SRegHowTo
+	 * @see http://openid.net/specs/openid-attribute-exchange-1_0.html
+	 * @param authReq
+	 */
+	private Map consumeAttriubteExchange(AuthSuccess authSuccess)
+			throws OpenIDException {
+		String attriubteName = null;
+		String value = null;
+		MessageExtension ext = null;
+		Map attrMap=new HashMap();
+
+		if (attributeExchange == null || attributeExchange.length == 0) {
+			// no attributeExchange
+			return attrMap;
+		}
+
+		logInfo(DEBUG_ASSOCIATION, "openid consuming Attribute Exchange...");
+
+		// iterate over all attriubtes....
+		for (String attribute : attributeExchange) {
+			// split attribute name from schema
+			if (attribute.indexOf('|') > -1) {
+				attriubteName = attribute.substring(0, attribute.indexOf('|'));
+			} else {
+				// no schema provided!
+				attriubteName = attribute;
+			}
+
+			// test if openID attribute exchange is provided
+			if (authSuccess.hasExtension(AxMessage.OPENID_NS_AX)) {
+				ext = authSuccess.getExtension(AxMessage.OPENID_NS_AX);
+				if (ext instanceof FetchResponse) {
+					FetchResponse fetchResp = (FetchResponse) ext;
+					value = fetchResp.getAttributeValue(attriubteName);
+				} 
+			} else {
+				// simple attribute exchange
+				if (authSuccess.hasExtension(SRegMessage.OPENID_NS_SREG)) {
+					ext = authSuccess.getExtension(SRegMessage.OPENID_NS_SREG);
+					if (ext instanceof SRegResponse) {
+						SRegResponse sregResp = (SRegResponse) ext;
+						value = sregResp.getAttributeValue(attriubteName);
+					}
+				}
+			}
+
+			attrMap.put(attriubteName, value);
+			logInfo(DEBUG_ASSOCIATION, "openid consuming Attribute: "
+					+ attriubteName + "=" + value);
+		}
+
+		
+		return attrMap;
+	
 	}
 }
