@@ -116,6 +116,8 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 	private String http_proxy_user = null;
 	private String http_proxy_pass = null;
 
+	private boolean extend_defaultport = false;
+
 	protected static final Class[] supportedMessageTypes = new Class[] {
 			javax.servlet.http.HttpServletRequest.class,
 			javax.servlet.http.HttpServletResponse.class };
@@ -132,12 +134,12 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 	private static final String AUTH_TYPE_INFO_KEY = "javax.servlet.http.authType";
 	protected static final String ASSIGN_GROUPS_OPTIONS_KEY = "assign.groups";
 	protected static final String ATTRIBUTE_EXCHANGE_OPTIONS_KEY = "attribute.exchange";
+	protected static final String EXTEND_DEFAULT_PORT = "extend.defaultport";
 
 	private static String DEBUG_STAGES_OPTIONS_KEY = "debug.stages";
 	public static final String OPENID_IDENTIFIER = "openid.identifier";
 	public static final String OPENID_CONSUMER_MANAGER = "openid.consumer_manager";
 	public static final String OPENID_ATTRIBUTE_EXCHANGE = "openid.attriubte_exchange";
-	
 
 	public static final String HTTP_PROXY_HOST_KEY = "http_proxy_host";
 	public static final String HTTP_PROXY_PORT_KEY = "http_proxy_port";
@@ -192,6 +194,13 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 		this.http_proxy_port = parseHttpProxyPort(options);
 		this.http_proxy_user = parseHttpProxyUser(options);
 		this.http_proxy_pass = parseHttpProxyPass(options);
+
+		// test for option EXTEND_DEFAULT_PORT
+		String sTestExtendPort = (String) options.get(EXTEND_DEFAULT_PORT);
+		if (sTestExtendPort != null
+				&& "true".equals(sTestExtendPort.toLowerCase()))
+			extend_defaultport = true;
+
 	}
 
 	/**
@@ -845,8 +854,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 			String groupList = (String) options
 					.get(ATTRIBUTE_EXCHANGE_OPTIONS_KEY);
 			if (groupList != null) {
-				StringTokenizer tokenizer = new StringTokenizer(groupList,
-						",;");
+				StringTokenizer tokenizer = new StringTokenizer(groupList, ",;");
 				Set<String> groupSet = null;
 				while (tokenizer.hasMoreTokens()) {
 					if (groupSet == null) {
@@ -963,20 +971,28 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 			StringBuffer receivingURL = request.getRequestURL();
 			String queryString = request.getQueryString();
 
-			// In some cases the receivingURL did not contain the default port
-			// 80 which is necessary for further verifying.
-			// So I will add port 80 to the receivingURL if no port
-			// is provided here
-			try {
-				URL urlReceifing = new URL(receivingURL.toString());
-				if (urlReceifing.getPort() == -1) {
-					// no port! so add port 80!
-					urlReceifing = new URL(urlReceifing.getProtocol(),
-							urlReceifing.getHost(), 80, urlReceifing.getFile());
-					receivingURL = new StringBuffer(urlReceifing.toString());
+			/**
+			 * if the option 'extend.defaultport' is set to 'true' the url will
+			 * be extended by port number 80
+			 * 
+			 * In early version we did use this mechansim. But the login page
+			 * need to add port 80 to the retun_url to get a valid openid back
+			 * from teh provider. So if 'extend.defaultport' is set to 'true'
+			 * the receifingURL will be modified here.
+			 **/
+			if (extend_defaultport == true) {
+				try {
+					URL urlReceifing = new URL(receivingURL.toString());
+					if (urlReceifing.getPort() == -1) {
+						// no port! so add port 80!
+						urlReceifing = new URL(urlReceifing.getProtocol(),
+								urlReceifing.getHost(), 80,
+								urlReceifing.getFile());
+						receivingURL = new StringBuffer(urlReceifing.toString());
+					}
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
 				}
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
 			}
 
 			if (queryString != null && queryString.length() > 0) {
@@ -1000,11 +1016,11 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 				AuthSuccess authSuccess = (AuthSuccess) verification
 						.getAuthResponse();
 
-				Map attrMap=consumeAttriubteExchange(authSuccess);
+				Map attrMap = consumeAttriubteExchange(authSuccess);
 				// store attributes into session
-				request.getSession().setAttribute(OPENID_ATTRIBUTE_EXCHANGE, attrMap);
-				
-				
+				request.getSession().setAttribute(OPENID_ATTRIBUTE_EXCHANGE,
+						attrMap);
+
 				return verified; // success
 			}
 		} catch (OpenIDException e) {
@@ -1078,7 +1094,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 	 * 
 	 * The result of all received attributes will be returned into a map.
 	 * (OPENID_ATTRIBUTE_EXCHANGE)
-	 *  
+	 * 
 	 * The method uses two different mechanisms to support different openID
 	 * providers.
 	 * 
@@ -1092,7 +1108,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 		String attriubteName = null;
 		String value = null;
 		MessageExtension ext = null;
-		Map attrMap=new HashMap();
+		Map attrMap = new HashMap();
 
 		if (attributeExchange == null || attributeExchange.length == 0) {
 			// no attributeExchange
@@ -1117,7 +1133,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 				if (ext instanceof FetchResponse) {
 					FetchResponse fetchResp = (FetchResponse) ext;
 					value = fetchResp.getAttributeValue(attriubteName);
-				} 
+				}
 			} else {
 				// simple attribute exchange
 				if (authSuccess.hasExtension(SRegMessage.OPENID_NS_SREG)) {
@@ -1134,8 +1150,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 					+ attriubteName + "=" + value);
 		}
 
-		
 		return attrMap;
-	
+
 	}
 }
