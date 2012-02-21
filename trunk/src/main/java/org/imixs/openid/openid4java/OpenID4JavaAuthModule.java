@@ -196,10 +196,14 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 		this.http_proxy_pass = parseHttpProxyPass(options);
 
 		// test for option EXTEND_DEFAULT_PORT
-		String sTestExtendPort = (String) options.get(EXTEND_DEFAULT_PORT);
-		if (sTestExtendPort != null
-				&& "true".equals(sTestExtendPort.toLowerCase()))
-			extend_defaultport = true;
+		if (options.containsKey(EXTEND_DEFAULT_PORT)) {
+			String sTestExtendPort = (String) options.get(EXTEND_DEFAULT_PORT);
+			if (sTestExtendPort != null
+					&& "true".equals(sTestExtendPort.toLowerCase()))
+				extend_defaultport = true;
+			
+			logInfo(DEBUG_ASSOCIATION, "extend.defaultport="+extend_defaultport);
+		}
 
 	}
 
@@ -982,6 +986,7 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 			 **/
 			if (extend_defaultport == true) {
 				try {
+					logInfo(DEBUG_ASSOCIATION, "extending default port 80");
 					URL urlReceifing = new URL(receivingURL.toString());
 					if (urlReceifing.getPort() == -1) {
 						// no port! so add port 80!
@@ -989,6 +994,8 @@ public class OpenID4JavaAuthModule implements ServerAuthModule {
 								urlReceifing.getHost(), 80,
 								urlReceifing.getFile());
 						receivingURL = new StringBuffer(urlReceifing.toString());
+						
+						logInfo(DEBUG_ASSOCIATION, "new receiving URL="+receivingURL);
 					}
 				} catch (MalformedURLException e) {
 					e.printStackTrace();
